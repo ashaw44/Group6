@@ -307,7 +307,7 @@ public class KThread {
     
     /**
      * Method to temporarily hold thread id and KThread.
-     
+    */
     
     public class joinThread{
     	private int ID;
@@ -319,8 +319,6 @@ public class KThread {
     	}	
     }
     
-    */
-
     /**
      * Create the idle thread. Whenever there are no threads ready to be run,
      * and <tt>runNextThread()</tt> is called, it will run the idle thread. The
@@ -441,7 +439,7 @@ public class KThread {
 
     /**
      * Tests whether this module is working.
-     */
+    
     public static void selfTest() {
     	Lib.debug(dbgThread, "Enter KThread.selfTest");
 	
@@ -475,6 +473,8 @@ public class KThread {
     	test.join();		
     		
     	}
+    	
+    	*/
 
     private static final char dbgThread = 't';
 

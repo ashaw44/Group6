@@ -1,0 +1,49 @@
+nachos 5.0j initializing... config interrupt timer user-check grader
+*** thread 0 looped 0 times
+*** thread 1 looped 0 times
+*** thread 0 looped 1 times
+*** thread 1 looped 1 times
+*** thread 0 looped 2 times
+*** thread 1 looped 2 times
+*** thread 0 looped 3 times
+*** thread 1 looped 3 times
+*** thread 0 looped 4 times
+*** thread 1 looped 4 times
+
+Testing KThread self-join:
+PASS: Failed to join to self.
+
+Testing Condition 2:
+Sleep:
+Going to sleep...
+Wake:
+...Waking a thread...
+PASS: Wake up succesful!
+PASS: Thread awake!
+
+Testing Alarm:
+Test1 -  Success!
+Test1 Should Display First
+Test3 - Success!
+Test3 Should Display Second
+Test2 -  Success!
+Test2 Should Display Last
+
+Testing Communicator:
+Speaking... Awaiting Verification!
+No longer speaking...
+Listening... Awaiting verification.
+No longer listening... Is this your word?: 5
+
+Testing ReactWater:
+Hydrogen...
+Oxygen...
+Hydrogen...
+PASS: Water was made!
+Machine halting!
+
+Ticks: total 5360, kernel 5360, user 0
+Disk I/O: reads 0, writes 0
+Console I/O: reads 0, writes 0
+Paging: page faults 0, TLB misses 0
+Network I/O: received 0, sent 0

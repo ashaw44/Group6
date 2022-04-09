@@ -1,0 +1,124 @@
+nachos 5.0j initializing... config interrupt timer user-check grader
+*** thread 0 looped 0 times
+*** thread 1 looped 0 times
+*** thread 0 looped 1 times
+*** thread 1 looped 1 times
+*** thread 0 looped 2 times
+*** thread 1 looped 2 times
+*** thread 0 looped 3 times
+*** thread 1 looped 3 times
+*** thread 0 looped 4 times
+*** thread 1 looped 4 times
+
+Testing KThread self-join:
+PASS: Failed to join to self.
+
+Testing Condition 2:
+Sleep:
+Going to sleep...
+Wake:
+...Waking a thread...
+PASS: Wake up succesful!
+PASS: Thread awake!
+
+Testing Alarm:
+PASS: Alarm success!
+
+Testing Communicator:
+Test 0 Speak(0)
+Test 0 Speak(1)
+Test 1 listening to... 0
+Test 2 listening to... 0
+Test 3 listening to... 0
+Test 4 listening to... 0
+Test 5 listening to... 0
+Test 0 Speak(2)
+Test 1 heard word 0
+Test 1 listening to... 1
+Test 1 heard word 1
+Test 1 listening to... 2
+Test 0 Speak(3)
+Test 3 heard word 0
+Test 3 listening to... 1
+Test 0 Speak(4)
+Test 4 heard word 0
+Test 4 listening to... 1
+Test 5 heard word 0
+Test 5 listening to... 1
+PASS: Communicator Success!
+
+Testing ReactWater:
+Hydrogen...
+Oxygen...
+Hydrogen...
+Water was made!
+ReactWater Success!
+Machine halting!
+
+Ticks: total 5240, kernel 5240, user 0
+Disk I/O: reads 0, writes 0
+Console I/O: reads 0, writes 0
+Paging: page faults 0, TLB misses 0
+Network I/O: received 0, sent 0
+nachos 5.0j initializing... config interrupt timer user-check grader
+*** thread 0 looped 0 times
+*** thread 1 looped 0 times
+*** thread 0 looped 1 times
+*** thread 1 looped 1 times
+*** thread 0 looped 2 times
+*** thread 1 looped 2 times
+*** thread 0 looped 3 times
+*** thread 1 looped 3 times
+*** thread 0 looped 4 times
+*** thread 1 looped 4 times
+
+Testing KThread self-join:
+PASS: Failed to join to self.
+
+Testing Condition 2:
+Sleep:
+Going to sleep...
+Wake:
+...Waking a thread...
+PASS: Wake up succesful!
+PASS: Thread awake!
+
+Testing Alarm:
+PASS: Alarm success!
+
+Testing Communicator:
+Test 0 Speak(0)
+Test 0 Speak(1)
+Test 1 listening to... 0
+Test 2 listening to... 0
+Test 3 listening to... 0
+Test 4 listening to... 0
+Test 5 listening to... 0
+Test 0 Speak(2)
+Test 1 heard word 0
+Test 1 listening to... 1
+Test 1 heard word 1
+Test 1 listening to... 2
+Test 0 Speak(3)
+Test 3 heard word 0
+Test 3 listening to... 1
+Test 0 Speak(4)
+Test 4 heard word 0
+Test 4 listening to... 1
+Test 5 heard word 0
+Test 5 listening to... 1
+PASS: Communicator Success!
+
+Testing ReactWater:
+Hydrogen...
+Oxygen...
+Hydrogen...
+Water was made!
+ReactWater Success!
+Machine halting!
+
+Ticks: total 5240, kernel 5240, user 0
+Disk I/O: reads 0, writes 0
+Console I/O: reads 0, writes 0
+Paging: page faults 0, TLB misses 0
+Network I/O: received 0, sent 0
