@@ -345,6 +345,66 @@ public class UserProcess {
 	Lib.assertNotReached("Machine.halt() did not halt machine!");
 	return 0;
     }
+    
+    /**
+     * Handle the exit() system call. 
+     */
+    private int handleExit(int status) {
+    	return 0;
+    }
+    
+    /**
+     * Handle the exec() system call. 
+     */
+    private int handleExec(int vaddr, int arg1, int arg2) {
+    	return 0;
+    }
+    
+    /**
+     * Handle the join() system call. 
+     */
+    private int handleJoin(int pID, int status) {
+    	return 0;
+    }
+    
+    /**
+     * Handle the create() system call. 
+     */
+    private int handleCreate(int vaddr) {
+    	return 0;
+    }
+    /**
+     * Handle the open() system call. 
+     */
+    private int handleOpen(int vaddr) {
+    	return 0;
+    }
+    /**
+     * Handle the read() system call. 
+     */
+    private int handleRead(int fileDescriptor, int vaddr, int size) {
+    	return 0;
+    }
+    /**
+     * Handle the write() system call. 
+     */
+    private int handleWrite(int fileDescriptor, int vaddr, int size) {
+    	return 0;
+    }
+    /**
+     * Handle the close() system call. 
+     */
+    private int handleClose(int fileDescriptor) {
+    	return 0;
+    }
+    /**
+     * Handle the unlink() system call. 
+     */
+    private int handleUnlink(int vaddr) {
+    	return 0;
+    }
+
+    
 
 
     private static final int
@@ -391,8 +451,24 @@ public class UserProcess {
 	switch (syscall) {
 	case syscallHalt:
 	    return handleHalt();
-
-
+	case syscallExit:
+		return handleExit(a0);
+	case syscallExec:
+		return handleExec(a0, a1, a2);
+	case syscallJoin:
+		return handleJoin(a0, a1);
+	case syscallCreate:
+		return handleCreate(a0);
+	case syscallOpen:
+		return handleOpen(a0);
+	case syscallRead:
+		return handleRead(a0, a1, a2);
+	case syscallWrite:
+		return handleWrite(a0, a1, a2);
+	case syscallClose:
+		return handleClose(a0);
+	case syscallUnlink:
+		return handleUnlink(a0);
 	default:
 	    Lib.debug(dbgProcess, "Unknown syscall " + syscall);
 	    Lib.assertNotReached("Unknown system call!");
