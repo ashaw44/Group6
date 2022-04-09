@@ -19,8 +19,8 @@ ag =		AutoGrader BoatGrader
 threads =	ThreadedKernel KThread Alarm \
 		Scheduler ThreadQueue RoundRobinScheduler \
 		Semaphore Lock Condition SynchList \
-		Rider ElevatorController \
-		PriorityScheduler LotteryScheduler
+		Condition2 Communicator Rider ElevatorController \
+		PriorityScheduler LotteryScheduler Boat ReactWater
 
 userprog =	UserKernel UThread UserProcess SynchConsole
 
