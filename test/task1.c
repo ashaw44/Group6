@@ -1,8 +1,5 @@
 #include "syscall.h"
-#include "stdio.h"
-
-// menu to choose which test to run
-enum OPTION {CREAT, OPEN, READ_WRITE, CLOSE_UNLINK};
+#include "stdio.h" //This does not work for some reason
 
 void creatTest() {
   // test whether creat successfully creates a file
@@ -16,7 +13,7 @@ void creatTest() {
     return;
   }
 
-  // test whether creat returns -1 if the OpenFile list is full
+  // test whether creat returns -1 if the OpenFile list is full. should not be reached.
   int i;
   for(i = 0; i < 14 - 1; i++) {
     if(creat(fileName) == -1) {
@@ -33,7 +30,7 @@ void creatTest() {
     return;
   }
 
-  printf("Creat Test complete!\n");
+  printf("Creat Test complete!\n\n");
 }
 
 void openTest() {
@@ -70,14 +67,8 @@ void openTest() {
   }
 
   // test whether open returns -1 if the OpenFile list is full
-  int i;
   fileName = "creatTest3.txt\0";
-  for(i = 0; i < 14 - 2; i++) {
-    if(open(fileName) == -1) {
-      printf("open fails while opening\n");
-      return;
-    }
-  }
+  
   success = open(fileName);
   if(success == -1) {
     printf("open returns -1\n");
@@ -87,10 +78,10 @@ void openTest() {
     return;
   }
 
-  printf("Open Test complete!\n");
+  printf("Open Test complete!\n\n");
 }
 
-void read_writeTest() {
+void readWriteTest() {
   // test whether open successfully opens the created file
   char* readFileName = "TestRead.txt\0";
   char* writeFileName = "TestWrite.txt\0";
@@ -126,15 +117,15 @@ void read_writeTest() {
   do {
     transferred = read(readFD, buffer, count);
   } while(write(writeFD, buffer, transferred) > 0);
-  printf("Finished reading and writing! Check out %s and output for sanity check\n", readFileName);
+  printf("Finished reading and writing! Check out %s and output\n", readFileName);
 
   printf("Read & Write Test complete!\n");
 }
 
-void close_unlinkTest() {
+void closeUnlinkTest() {
   // test whether creat successfully creates a file
-  char* fileName1 = "removeMe1.txt\0";
-  char* fileName2 = "removeMe2.txt\0";
+  char* fileName1 = "removeTest1.txt\0";
+  char* fileName2 = "removeTest2.txt\0";
   int file1 = creat(fileName1);
   int file2 = creat(fileName2);
   int file3 = creat(fileName2);
@@ -197,36 +188,37 @@ void close_unlinkTest() {
     return;
   }
 
-  printf("Close & Unlink Test complete!\n");
+  printf("Close & Unlink Test complete!\n\n");
 }
 
 
 int main(int argc, char** argv) {
-  if(argc == 0) {
-    halt();
-  }
-  int test = atoi(argv[0]);
+      
+/*
+*Change input for test cases.
+1. Create
+2. Open
+3. Read/Write
+4. Close/Unlink
+*/
+int input = 1; //If stdio.h worked this would be a scanf but the mips path is messing with it
 
-  switch(test) {
-    case CREAT:
-      printf("Create:\n");
+if(input == 1){	
+	printf("Create:\n");
       creatTest();
-      break;
-    case OPEN:
+}
+if(input == 2){
       printf("Open:\n");
       openTest();
-      break;
-    case READ_WRITE:
+}
+if(input == 3){
       printf("Read/Write: \n");
-      read_writeTest();
-      break;
-    case CLOSE_UNLINK:
+      readWriteTest();
+}
+if(input == 4){
       printf("Close/Unlink: \n");
-      close_unlinkTest();
-      break;
-    default:
-      printf("Not a valid test case. Try again. \n");
-  }
+      closeUnlinkTest();
+ }
 
   halt();
 }
