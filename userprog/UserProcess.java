@@ -42,6 +42,8 @@ public class UserProcess {
 	descriptors[1] = UserKernel.console.openForWriting();
 	Machine.interrupt().restore(state);
 	
+	descriptorList = new int[16];
+	
 	//parentProcess = null;
 	//childProcess = new LinkedList<UserProcess>();
 	//childProcessStatus = new HashMap<Integer, Integer>();
@@ -476,67 +478,45 @@ public class UserProcess {
      * Handle the read() system call. 
      */
     private int handleRead(int fileDescriptor, int vaddr, int size) {
-    	//Handle descriptor index
-    	if(fileDescriptor < 0 || fileDescriptor > 15){
-			Lib.debug(dbgProcess, "handleRead: Descriptor out of range!");
+    	if(size < 0 || (fileDescriptor >= 16 || fileDescriptor < 0)
+				|| descriptors[fileDescriptor] == null)
 			return -1;
-		}
-    	//Handle size
-		if(size < 0){
-			Lib.debug(dbgProcess, "handleRead: Size to read cannot be negative!");
+	
+		byte[] readBuffer = new byte[size];
+		int bytesRead;
+		if(fileDescriptor < 2)
+			bytesRead = descriptors[fileDescriptor].read(readBuffer, 0, size);
+		else
+			bytesRead = descriptors[fileDescriptor].read(descriptorList[fileDescriptor], readBuffer, 0, size);
+	
+		if(bytesRead == -1 || bytesRead == 0) 
 			return -1;
-		}
-		//Handle opening
-		OpenFile file;
-		if(descriptors[fileDescriptor] == null){
-			Lib.debug(dbgProcess, "handleRead: File doesn't exist in the descriptor table!");
-			return -1;
-		}
-		else{
-			file = descriptors[fileDescriptor];
-		}
-		int length = 0;
-		byte[] reader = new byte[size];
-		length = file.read(reader, 0, size);
-		if(length == -1){
-			Lib.debug(dbgProcess, "handleRead: Error occurred when try to read file!");
-			return -1;
-		}
-		int count = 0;
-		count = writeVirtualMemory(vaddr,reader,0,length);
-		return count;
+		
+		int bytesTransferred = writeVirtualMemory(vaddr, readBuffer, 0, bytesRead);
+		if(fileDescriptor >= 2)
+			descriptorList[fileDescriptor] += bytesTransferred;
+		return bytesTransferred;
 
     }
     /**
      * Handle the write() system call. 
      */
     private int handleWrite(int fileDescriptor, int vaddr, int size) {
-    	if(fileDescriptor < 0 || fileDescriptor > 15){
-			Lib.debug(dbgProcess,"hanleWrite: Descriptor out of range!");
+    	if(size < 0 || (fileDescriptor >= 16 || fileDescriptor < 0)
+				|| descriptors[fileDescriptor] == null)
 			return -1;
-		}
-		if(size < 0){
-			Lib.debug(dbgProcess, "handleWrite: Size cannot be negative!");
-			return -1;	
-		}
-		OpenFile file;
-		if(descriptors[fileDescriptor] == null){
-			Lib.debug(dbgProcess, "handleWrite: File doesn't exist in descriptor table!");
-			return -1;
-		}
-		else{
-			file=descriptors[fileDescriptor];
-		}
-		int length = 0;
-		byte[] writer = new byte[size];
-		length = readVirtualMemory(vaddr,writer,0,size);
-		int count = 0;
-		count = file.write(writer, 0, length);
-		if(count == -1){
-			Lib.debug(dbgProcess, "handleWrite: Error occur when read file!");
-			return -1;
-		}
-		return count;
+		
+		byte[] writeBuffer = new byte[size];
+		int bytesToWrite = readVirtualMemory(vaddr, writeBuffer, 0, size);
+		
+		int bytesWritten;
+		if(fileDescriptor < 2) 
+			bytesWritten =  descriptors[fileDescriptor].write(writeBuffer, 0, bytesToWrite);
+		else 	
+			bytesWritten =  descriptors[fileDescriptor].write(descriptorList[fileDescriptor], writeBuffer, 0, bytesToWrite);	
+		if(fileDescriptor >= 2)
+			descriptorList[fileDescriptor] += (bytesWritten > 0) ? bytesWritten : 0;
+		return (bytesWritten < size && bytesWritten != 0) ? -1 : bytesWritten;
     }
     /**
      * Handle the close() system call. 
@@ -717,6 +697,7 @@ public class UserProcess {
     
     /** Added By Group 6: */
     protected OpenFile[] descriptors;	//Array of open files
+    protected int[] descriptorList;
     protected int pID; //Process ID
     protected static int count = 0;
     protected Lock countLock = new Lock();

@@ -201,7 +201,7 @@ int main(int argc, char** argv) {
 3. Read/Write
 4. Close/Unlink
 */
-int input = 1; //If stdio.h worked this would be a scanf but the mips path is messing with it
+int input = 3; //If stdio.h worked this would be a scanf but the mips path is messing with it
 
 if(input == 1){	
 	printf("Create:\n");
