@@ -383,28 +383,110 @@ public class UserProcess {
      * Handle the read() system call. 
      */
     private int handleRead(int fileDescriptor, int vaddr, int size) {
-    	return 0;
+    	int toRet = -1;
+		if (fileDescriptor < 0 || fileDescriptor > 15) {
+			Lib.debug(dbgProcess, "handleRead: FileDescriptor is invalid");
+			return -1;
+		}
+		byte[] b = new byte[size];
+		OpenFile readFile = fileMap.get(currentlyOpen.get(fileDescriptor)).getFile();
+		if (readFile == null) {
+			Lib.debug(dbgProcess, "handleRead: file is not currentlyOpen");
+			return -1;
+		}
+		toRet = readFile.read(b, 0, size);
+		if (toRet == -1) {
+			Lib.debug(dbgProcess,
+					"handleRead: readFile.read() didn't complete properly");
+			return -1;
+		}
+		toRet = writeVirtualMemory(vaddr, b);
+		return toRet;
     }
     /**
      * Handle the write() system call. 
      */
     private int handleWrite(int fileDescriptor, int vaddr, int size) {
-    	return 0;
+    	int toRet;
+		if (fileDescriptor < 0 || fileDescriptor > 15) {
+			Lib.debug(dbgProcess, "handleWrite: FileDescriptor is invalid");
+			return -1;
+		}
+
+		byte[] b = new byte[size];
+		toRet = readVirtualMemory(vaddr, b);
+
+		OpenFile writeFile = fileMap.get(currentlyOpen.get(fileDescriptor)).getFile();
+		if (writeFile == null) {
+			Lib.debug(dbgProcess, "handleWrite: file is not currentlyOpen");
+			return -1;
+		}
+
+		rtn = writeFile.write(b, 0, size);
+		if (toRet == -1) {
+			Lib.debug(dbgProcess,
+					"handleWrite: writeFile.write() didn't complete properly");
+			return -1;
+		}
+
+		return toRet;
     }
     /**
      * Handle the close() system call. 
      */
     private int handleClose(int fileDescriptor) {
-    	return 0;
+	    //closes fileDescritor
+    	if (fileDescriptor < 0 || fileDescriptor > 15) {
+			System.out.println("handleClose: FileDescriptor is invalid");
+			Lib.debug(dbgProcess, "handleClose: FileDescriptor is invalid");
+			return -1;
+		}
+			fileMap.get(currentlyOpen.get(fileDescriptor)).getFile().close();
+			fileMap.get(currentlyOpen.get(fileDescriptor)).decrementReferences();
+			currentlyOpen.remove(fileDescriptor);
+			occupiedFiles[fileDescriptor] = false;
+		System.out.println("File Closed");
+		return 0;
     }
     /**
      * Handle the unlink() system call. 
      */
     private int handleUnlink(int vaddr) {
-    	return 0;
+    	String file = readVirtualMemoryString(vaddr, nameLength);
+		if (file == null) {
+			Lib.debug(dbgProcess, "handleUnlink: File address is Invalid");
+			return -1;
+		}
+		if (fileMap.get(file).getRef() == 0) {
+			fileMap.get(file).markForDeletion();
+			fileMap.remove(file);
+			ThreadedKernel.fileSystem.remove(file);
+		} else {
+			fileMap.get(file).markForDeletion();
+		}
+		return 0;
     }
 
-    
+    class extra {
+		private String file;
+		private int numRef;
+		private boolean markedForDelete;
+		private OpenFile file;
+
+		private extra(OpenFile inputFile) {
+			file = inputFile;
+			numRef = 1;
+			markedForDelete = false;
+		}
+
+		public void markForDeletion() {
+			markedForDelete = true;
+		}
+
+		public int getRef() {
+			return numRef;
+		}
+	}
 
 
     private static final int
@@ -418,6 +500,7 @@ public class UserProcess {
 	syscallWrite = 7,
 	syscallClose = 8,
 	syscallUnlink = 9;
+	
 
     /**
      * Handle a syscall exception. Called by <tt>handleException()</tt>. The
@@ -522,4 +605,6 @@ public class UserProcess {
 	
     private static final int pageSize = Processor.pageSize;
     private static final char dbgProcess = 'a';
+			
+    private static final int nameLength = 256;
 }
