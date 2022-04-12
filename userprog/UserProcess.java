@@ -6,7 +6,12 @@ import nachos.userprog.*;
 
 import java.util.Hashtable;
 import java.io.EOFException;
-
+import java.lang.reflect.Array;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.Set;
 /**
  * Encapsulates the state of a user process that is not contained in its
  * user thread (or threads). This includes its address translation state, a
@@ -560,8 +565,8 @@ public class UserProcess {
 	/**
 	 * Handle the unlink() system call.
 	 */
-	private int handleUnlink(int nameAddress) {
-		String file = readVirtualMemoryString(nameAddress, nameLength);
+	private int handleUnlink(int vaddr) {
+		String file = readVirtualMemoryString(vaddr, nameLength);
 		if (file == null) {
 			Lib.debug(dbgProcess, "handleUnlink: filename address is invalid");
 
