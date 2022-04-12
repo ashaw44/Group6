@@ -4,6 +4,7 @@ import nachos.machine.*;
 import nachos.threads.*;
 import nachos.userprog.*;
 
+import java.util.Hashtable;
 import java.io.EOFException;
 
 /**
@@ -40,9 +41,17 @@ public class UserProcess {
 	
 	descriptors[0] = UserKernel.console.openForReading();
 	descriptors[1] = UserKernel.console.openForWriting();
-	Machine.interrupt().restore(state);
+	
+	occupiedFiles[0] = true;
+	currentlyOpen.put(0, descriptors[0].getName());
+	fileMap.put(descriptors[0].getName(), new fileStuff(descriptors[0]));
+	occupiedFiles[1] = true;
+	currentlyOpen.put(1, descriptors[1].getName());
+	fileMap.put(descriptors[1].getName(), new fileStuff(descriptors[1]));
 	
 	descriptorList = new int[16];
+	
+	
 	
 	//parentProcess = null;
 	//childProcess = new LinkedList<UserProcess>();
@@ -439,94 +448,47 @@ public class UserProcess {
      * Handle the open() system call. 
      */
     private int handleOpen(int vaddr) {
-    	//Handle "null pointer address"
-    	if(vaddr < 0){
-			Lib.debug(dbgProcess, "handleOpen: Invalid virtual address!");
+    	int ret = -1;
+		String fileName = readVirtualMemoryString(vaddr, 256);
+		if (fileName == null) {
+			Lib.debug(dbgProcess, "handleOpen: Invalid filename address");
 			return -1;
 		}
-    	//Handle fileName
-		String fileName = readVirtualMemoryString(vaddr,256);
-		if(fileName == null){
-			Lib.debug(dbgProcess, "handleOpen: Read filename failed!");
+		OpenFile file = ThreadedKernel.fileSystem.open(fileName, false);
+		if (file == null) {
+			Lib.debug(dbgProcess, "handleOpen: File could not be created");
 			return -1;
 		}
-		//Handle file Limit (16)
-		int availableIndex = -1;
-		for(int i=0;i<16;i++){
-			if(descriptors[i] == null){
-				availableIndex = i;
+		for (int i = 0; i < occupiedFiles.length; i++) {
+			if (occupiedFiles[i] == false) {
+				ret = i;
 				break;
 			}
 		}
-		if(availableIndex == -1){
-			Lib.debug(dbgProcess, "handleOpen: File Limit Reached!");
-			return -1;
-		}else{
-			//Handle file opening
-			OpenFile file = ThreadedKernel.fileSystem.open(fileName, false);
-			if(file == null){
-				Lib.debug(dbgProcess, "handleOpen: Open failed!");
-				return -1;
-			}
-			else{
-				descriptors[availableIndex] = file;
-				return availableIndex;
-			}
+		if (ret == -1) {
+			Lib.debug(dbgProcess,
+					"handleCreate: There are no more free fileDescriptors");
+			return ret;
 		}
+		if (fileMap.get(file.getName()) != null
+				&& fileMap.get(file.getName()).isMarkedForDeletion() == true) {
+			Lib.debug(dbgProcess, "handleOpen: file marked for deletion");
+			return -1;
+		}
+		if (currentlyOpen.containsValue(file.getName())) {
+			fileMap.get(file.getName()).incrementReferences();
+			occupiedFiles[ret] = true;
+			return ret;
+		}
+		occupiedFiles[ret] = true;
+		currentlyOpen.put(ret, file.getName());
+		fileMap.put(file.getName(), new fileStuff(file));
+		return ret;
     }
     /**
      * Handle the read() system call. 
      */
-<<<<<<< HEAD
-    private int handleRead(int fileDescriptor, int vaddr, int size) {
-    	if(size < 0 || (fileDescriptor >= 16 || fileDescriptor < 0)
-				|| descriptors[fileDescriptor] == null)
-			return -1;
-	
-		byte[] readBuffer = new byte[size];
-		int bytesRead;
-		if(fileDescriptor < 2)
-			bytesRead = descriptors[fileDescriptor].read(readBuffer, 0, size);
-		else
-			bytesRead = descriptors[fileDescriptor].read(descriptorList[fileDescriptor], readBuffer, 0, size);
-	
-		if(bytesRead == -1 || bytesRead == 0) 
-			return -1;
-		
-		int bytesTransferred = writeVirtualMemory(vaddr, readBuffer, 0, bytesRead);
-		if(fileDescriptor >= 2)
-			descriptorList[fileDescriptor] += bytesTransferred;
-		return bytesTransferred;
-
-    }
-    /**
-     * Handle the write() system call. 
-     */
-    private int handleWrite(int fileDescriptor, int vaddr, int size) {
-    	if(size < 0 || (fileDescriptor >= 16 || fileDescriptor < 0)
-				|| descriptors[fileDescriptor] == null)
-			return -1;
-		
-		byte[] writeBuffer = new byte[size];
-		int bytesToWrite = readVirtualMemory(vaddr, writeBuffer, 0, size);
-		
-		int bytesWritten;
-		if(fileDescriptor < 2) 
-			bytesWritten =  descriptors[fileDescriptor].write(writeBuffer, 0, bytesToWrite);
-		else 	
-			bytesWritten =  descriptors[fileDescriptor].write(descriptorList[fileDescriptor], writeBuffer, 0, bytesToWrite);	
-		if(fileDescriptor >= 2)
-			descriptorList[fileDescriptor] += (bytesWritten > 0) ? bytesWritten : 0;
-		return (bytesWritten < size && bytesWritten != 0) ? -1 : bytesWritten;
-    }
-    /**
-     * Handle the close() system call. 
-     */
-    private int handleClose(int fileDescriptor) {
-    	//Handle fileDescriptor index
-    	if(fileDescriptor < 0 || fileDescriptor > 15){
-			Lib.debug(dbgProcess, "handleClose: Descriptor out of range!");
-=======
+    
   private int handleRead(int fileDescriptor, int vaddr, int size) {
 		int ret = -1;
 		if (fileDescriptor < 0 || fileDescriptor > 15) {
@@ -549,6 +511,9 @@ public class UserProcess {
 		return ret;
 	}
 
+  /**
+   * Handle the write() system call. 
+   */
 	private int handleWrite(int fileDescriptor, int vaddr, int size) {
 		int ret;
 		if (fileDescriptor < 0 || fileDescriptor > 15) {
@@ -580,15 +545,15 @@ public class UserProcess {
 	 */
 	private int handleClose(int fileDescriptor) {
 		if (fileDescriptor < 0 || fileDescriptor > 15) {
-			System.out.println("handleClose: fileDescriptor is invalid");
-			Lib.debug(dbgProcess, "handleClose: fileDescriptor is invalid");
+			System.out.println("handleClose: Invalid fileDescriptor");
+			Lib.debug(dbgProcess, "handleClose: Invalid fileDescriptor");
 			return -1;
 		}
 		fileMap.get(currentlyOpen.get(fileDescriptor)).getFile().close();
 		fileMap.get(currentlyOpen.get(fileDescriptor)).decrementReferences();
 		currentlyOpen.remove(fileDescriptor);
 		occupiedFiles[fileDescriptor] = false;
-		System.out.println("Complete");
+		System.out.println("Complete.");
 		return 0;
 	}
 
@@ -599,7 +564,7 @@ public class UserProcess {
 		String file = readVirtualMemoryString(nameAddress, nameLength);
 		if (file == null) {
 			Lib.debug(dbgProcess, "handleUnlink: filename address is invalid");
->>>>>>> 0fa6985be70771d006b141639653329e76f6fbef
+
 			return -1;
 		}
 		if (fileMap.get(file).getReferences() == 0) {
@@ -624,22 +589,28 @@ public class UserProcess {
 			markedForDelete = false;
 		}
 
+		public boolean isMarkedForDeletion() {
+			return markedForDelete;
+		}
 		public void markForDeletion() {
 			markedForDelete = true;
 		}
-
 		public OpenFile getFile() {
-			return file;
+			return file1;
 		}
 
 		public int getReferences() {
-			return numReferences;
+			return numRef;
+		}
+		
+		public void incrementReferences() {
+			numRef++;
 		}
 	    	
-	    	public void decrementReferences() {
-			numReferences--;
+	    public void decrementReferences() {
+			numRef--;
 		}
-	    
+    }
 
 
     private static final int
@@ -766,5 +737,11 @@ public class UserProcess {
     protected static int count = 0;
     protected Lock countLock = new Lock();
     private static final int nameLength = 256;
+    
+    private Hashtable<Integer, String> currentlyOpen = new Hashtable<Integer, String>();
+	private static Hashtable<String, fileStuff> fileMap = new Hashtable<String, fileStuff>();
     private boolean[] occupiedFiles = new boolean[16];
+    
+    
+    
 }
