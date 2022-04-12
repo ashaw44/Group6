@@ -477,6 +477,7 @@ public class UserProcess {
     /**
      * Handle the read() system call. 
      */
+<<<<<<< HEAD
     private int handleRead(int fileDescriptor, int vaddr, int size) {
     	if(size < 0 || (fileDescriptor >= 16 || fileDescriptor < 0)
 				|| descriptors[fileDescriptor] == null)
@@ -525,58 +526,120 @@ public class UserProcess {
     	//Handle fileDescriptor index
     	if(fileDescriptor < 0 || fileDescriptor > 15){
 			Lib.debug(dbgProcess, "handleClose: Descriptor out of range!");
+=======
+  private int handleRead(int fileDescriptor, int vaddr, int size) {
+		int ret = -1;
+		if (fileDescriptor < 0 || fileDescriptor > 15) {
+			Lib.debug(dbgProcess, "handleRead: Invalid fileDescriptor");
 			return -1;
 		}
-    	//Handle closing
-		if(descriptors[fileDescriptor] == null){
-			Lib.debug(dbgProcess, "handleClose: File doesn't exist in the descriptor table!");
-			return -1;
-		}else{
-			descriptors[fileDescriptor].close();
-			descriptors[fileDescriptor] = null;
-		}
-		return 0;
-    }
-    /**
-     * Handle the unlink() system call. 
-     */
-    private int handleUnlink(int vaddr) {
-    	//Handle vaddr index
-    	if(vaddr < 0){
-			Lib.debug(dbgProcess, "handleUnlink: Invalid virtual address!");
+		byte[] b = new byte[size];
+		OpenFile readFile = fileMap.get(currentlyOpen.get(fileDescriptor)).getFile();
+		if (readFile == null) {
+			Lib.debug(dbgProcess, "handleRead: file not in currentlyOpen");
 			return -1;
 		}
-    	//Handle invalid filename
-		String fileName = readVirtualMemoryString(vaddr,256);
-		if(fileName == null){
-			Lib.debug(dbgProcess, "handleUnlink: Read filename failed!");
+		ret = readFile.read(b, 0, size);
+		if (ret == -1) {
+			Lib.debug(dbgProcess,
+					"handleRead: readFile.read() not completed properly");
 			return -1;
 		}
-		//Handle unlink
-		OpenFile file;
-		int index = -1;
-		for(int i=0;i<16;i++){
-			file=descriptors[i];
-			if(file != null && file.getName().compareTo(fileName) == 0){
-				index = i;
-				break;
-			}
-		}
-		//Handle closing -> unlinking
-		if(index != -1){
-			Lib.debug(dbgProcess, "handleUnlink: File should be closed first!");
-			return -1;
-		}
-		boolean success= ThreadedKernel.fileSystem.remove(fileName);
-		if(!success){
-			Lib.debug(dbgProcess, "handleUnlink: Remove failed!");
+		ret = writeVirtualMemory(vaddr, b);
+		return ret;
+	}
+
+	private int handleWrite(int fileDescriptor, int vaddr, int size) {
+		int ret;
+		if (fileDescriptor < 0 || fileDescriptor > 15) {
+			Lib.debug(dbgProcess, "handleWrite: fileDescriptor is invalid");
 			return -1;
 		}
 
-		return 0;
-    }
+		byte[] b = new byte[size];
+		ret = readVirtualMemory(vaddr, b);
 
-    
+		OpenFile writeFile = fileMap.get(currentlyOpen.get(fileDescriptor)).getFile();
+		if (writeFile == null) {
+			Lib.debug(dbgProcess, "handleWrite: file is not currentlyOpen");
+			return -1;
+		}
+
+		ret = writeFile.write(b, 0, size);
+		if (ret == -1) {
+			Lib.debug(dbgProcess,
+					"handleWrite: writeFile.write() not completed properly");
+			return -1;
+		}
+
+		return ret;
+	}
+
+	/**
+	 * Handle the close() system call.
+	 */
+	private int handleClose(int fileDescriptor) {
+		if (fileDescriptor < 0 || fileDescriptor > 15) {
+			System.out.println("handleClose: fileDescriptor is invalid");
+			Lib.debug(dbgProcess, "handleClose: fileDescriptor is invalid");
+			return -1;
+		}
+		fileMap.get(currentlyOpen.get(fileDescriptor)).getFile().close();
+		fileMap.get(currentlyOpen.get(fileDescriptor)).decrementReferences();
+		currentlyOpen.remove(fileDescriptor);
+		occupiedFiles[fileDescriptor] = false;
+		System.out.println("Complete");
+		return 0;
+	}
+
+	/**
+	 * Handle the unlink() system call.
+	 */
+	private int handleUnlink(int nameAddress) {
+		String file = readVirtualMemoryString(nameAddress, nameLength);
+		if (file == null) {
+			Lib.debug(dbgProcess, "handleUnlink: filename address is invalid");
+>>>>>>> 0fa6985be70771d006b141639653329e76f6fbef
+			return -1;
+		}
+		if (fileMap.get(file).getReferences() == 0) {
+			fileMap.get(file).markForDeletion();
+			fileMap.remove(file);
+			ThreadedKernel.fileSystem.remove(file);
+		} else {
+			fileMap.get(file).markForDeletion();
+		}
+		return 0;
+	}
+
+    class fileStuff {
+		private String file;
+		private int numRef;
+		private boolean markedForDelete;
+		private OpenFile file1;
+
+		private fileStuff(OpenFile inputFile) {
+			file1 = inputFile;
+			numRef = 1;
+			markedForDelete = false;
+		}
+
+		public void markForDeletion() {
+			markedForDelete = true;
+		}
+
+		public OpenFile getFile() {
+			return file;
+		}
+
+		public int getReferences() {
+			return numReferences;
+		}
+	    	
+	    	public void decrementReferences() {
+			numReferences--;
+		}
+	    
 
 
     private static final int
@@ -694,6 +757,7 @@ public class UserProcess {
 	
     private static final int pageSize = Processor.pageSize;
     private static final char dbgProcess = 'a';
+
     
     /** Added By Group 6: */
     protected OpenFile[] descriptors;	//Array of open files
@@ -701,4 +765,6 @@ public class UserProcess {
     protected int pID; //Process ID
     protected static int count = 0;
     protected Lock countLock = new Lock();
+    private static final int nameLength = 256;
+    private boolean[] occupiedFiles = new boolean[16];
 }
