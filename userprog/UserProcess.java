@@ -25,9 +25,31 @@ public class UserProcess {
     public UserProcess() {
 	int numPhysPages = Machine.processor().getNumPhysPages();
 	pageTable = new TranslationEntry[numPhysPages];
-	for (int i=0; i<numPhysPages; i++)
+	for (int i=0; i<numPhysPages; i++){
 	    pageTable[i] = new TranslationEntry(i,i, true,false,false,false);
+	}
+	
+	/**	For Tasks 1 and 3: */
+	descriptors = new OpenFile[16];
+	boolean state = Machine.interrupt().disable();
+	
+	countLock = new Lock();
+	countLock.acquire();
+	pID = count++;
+	countLock.release();
+	
+	descriptors[0] = UserKernel.console.openForReading();
+	descriptors[1] = UserKernel.console.openForWriting();
+	Machine.interrupt().restore(state);
+	
+	//parentProcess = null;
+	//childProcess = new LinkedList<UserProcess>();
+	//childProcessStatus = new HashMap<Integer, Integer>();
+	
     }
+    
+    
+    
     
     /**
      * Allocate and return a new process of the correct class. The class name
@@ -339,6 +361,10 @@ public class UserProcess {
      * Handle the halt() system call. 
      */
     private int handleHalt() {
+    	
+    if(pID != 0){
+    	return 0;
+    }
 
 	Machine.halt();
 	
@@ -371,13 +397,80 @@ public class UserProcess {
      * Handle the create() system call. 
      */
     private int handleCreate(int vaddr) {
-    	return 0;
+    	//Handle "null pointer address"
+    	if(vaddr < 0){
+			Lib.debug(dbgProcess, "handleCreate: Invalid virtual address!");
+			return -1;
+		}
+    	//Handle fileName
+		String fileName=readVirtualMemoryString(vaddr,256);
+		if(fileName == null || fileName == ""){
+			Lib.debug(dbgProcess, "handleCreate: Read filename failed!");
+			return -1;
+		}
+		//Handle file Limit (16)
+		int availableIndex=-1;
+		for(int i=0;i<16;i++){
+			if(descriptors[i]==null){
+				availableIndex=i;
+				break;
+			}
+		}
+		if(availableIndex==-1){
+			Lib.debug(dbgProcess, "handleCreate: File limit reached!");
+			return -1;
+		}
+		else{
+			//Handle file opening
+			OpenFile file=ThreadedKernel.fileSystem.open(fileName, true);
+			if(file==null){
+				Lib.debug(dbgProcess, "handleCreate:Create failed!");
+				return-1;
+			}
+			else{
+				descriptors[availableIndex]=file;
+				return availableIndex;
+			}		
+		}	
     }
     /**
      * Handle the open() system call. 
      */
     private int handleOpen(int vaddr) {
-    	return 0;
+    	//Handle "null pointer address"
+    	if(vaddr < 0){
+			Lib.debug(dbgProcess, "handleOpen: Invalid virtual address!");
+			return -1;
+		}
+    	//Handle fileName
+		String fileName = readVirtualMemoryString(vaddr,256);
+		if(fileName == null){
+			Lib.debug(dbgProcess, "handleOpen: Read filename failed!");
+			return -1;
+		}
+		//Handle file Limit (16)
+		int availableIndex = -1;
+		for(int i=0;i<16;i++){
+			if(descriptors[i] == null){
+				availableIndex = i;
+				break;
+			}
+		}
+		if(availableIndex == -1){
+			Lib.debug(dbgProcess, "handleOpen: File Limit Reached!");
+			return -1;
+		}else{
+			//Handle file opening
+			OpenFile file = ThreadedKernel.fileSystem.open(fileName, false);
+			if(file == null){
+				Lib.debug(dbgProcess, "handleOpen: Open failed!");
+				return -1;
+			}
+			else{
+				descriptors[availableIndex] = file;
+				return availableIndex;
+			}
+		}
     }
     /**
      * Handle the read() system call. 
@@ -611,7 +704,13 @@ public class UserProcess {
 	
     private static final int pageSize = Processor.pageSize;
     private static final char dbgProcess = 'a';
-	    
+
+    
+    /** Added By Group 6: */
+    protected OpenFile[] descriptors;	//Array of open files
+    protected int pID; //Process ID
+    protected static int count = 0;
+    protected Lock countLock = new Lock();
     private static final int nameLength = 256;
     private boolean[] occupiedFiles = new boolean[16];
 }
