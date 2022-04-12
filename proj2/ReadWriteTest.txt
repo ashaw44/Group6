@@ -1,0 +1,13 @@
+nachos 5.0j initializing... config interrupt timer processor console user-check grader
+Testing the console device. Typed characters
+will be echoed until q is typed.
+q
+Read/Write: 
+open unsuccessfully opens
+Machine halting!
+
+Ticks: total 3093351, kernel 3092420, user 931
+Disk I/O: reads 0, writes 0
+Console I/O: reads 1, writes 40
+Paging: page faults 0, TLB misses 0
+Network I/O: received 0, sent 0
